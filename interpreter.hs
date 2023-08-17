@@ -86,37 +86,28 @@ bbigStep (Igual e1 e2,s) = ebigStep (e1, s) == ebigStep(e2, s)
 ------------------------------------------------------------------
 
 cbigStep :: (C, Memoria) -> (C,Memoria)
-
 cbigStep (Skip, s) = (Skip, s)
-
 cbigStep (If b c1 c2, s)
     | bbigStep (b, s) == True = cbigStep(c1, s)
     | otherwise = cbigStep(c2, s)
-
 cbigStep (Seq c1 c2, s) =
     let (c1', s') = cbigStep (c1, s)
     in cbigStep (c2, s')
-
 cbigStep (Atrib (Var x) e, s) = (Skip, mudaVar s x (ebigStep (e, s)))
-
 cbigStep (While b c, s) 
     | bbigStep (b,s) == True = cbigStep (Seq c (While b c), s) 
     | otherwise = cbigStep (Skip, s)
-
 --cbigStep (DoWhile c b,s) 
 --    | bbigStep (b,s) == True = cbigStep (Seq c (DoWhile c b), s)
 --    | otherwise = cbigStep (c,s) -- Executa 1x ao invés de Skip
-
 cbigStep (DoWhile c b, s)
     | bbigStep (b, s) == True =
         let combinedCmd = Seq c (DoWhile c b)
         in cbigStep (combinedCmd, s)
     | otherwise = (Skip, s)
-
 cbigStep (Loop e c, s)
    | ebigStep (e,s) <= 0 = (Skip, s)
    | otherwise = cbigStep(Seq c (Loop (Sub e (Num 1)) c), s)
-
 cbigStep (DAtrrib (Var x) (Var y) e1 e2, s) =
     let n1 = ebigStep (e1, s)
         n2 = ebigStep (e2, s)

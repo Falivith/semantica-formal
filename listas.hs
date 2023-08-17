@@ -141,3 +141,35 @@ refleteArvore (Nodo n a1 a2) = (Nodo n (refleteArvore a2) (refleteArvore a1))
 geraListaArv :: Arvore -> [Int]
 geraListaArv (Folha n) = [n]
 geraListaArv (Nodo n a1 a2) = n : (geraListaArv a1 ++ geraListaArv a2)
+
+fat :: Int -> Int
+fat 0 = 1
+fat 1 = 1
+fat n = n * fat (n-1)
+
+potencia :: Int -> Int -> Int
+potencia 0 y = 0
+potencia 1 y = 1
+potencia x 0 = 1
+potencia x 1 = x
+potencia x n = x * potencia x (n-1)
+
+palindromo :: String -> Bool
+palindromo s = s == reverse s
+
+-- Defina, usando guardas, a função sinal
+
+sinal :: Int -> Int 
+sinal x
+    | x < 0 = -1
+    | x > 0 = 1
+    | otherwise = 0 
+
+-- Implemente a função: menorTres :: Int -> Int -> Int -> Int que recebe três inteiros e devolve o menor entre os três
+
+menorTres :: Int -> Int -> Int -> Int
+menorTres x y z
+    | x < y  && x < z = x
+    | y < x && y < z = y
+    | z < x && z < y = z
+
