@@ -97,22 +97,14 @@ cbigStep (Atrib (Var x) e, s) = (Skip, mudaVar s x (ebigStep (e, s)))
 cbigStep (While b c, s) 
     | bbigStep (b,s) == True = cbigStep (Seq c (While b c), s) 
     | otherwise = cbigStep (Skip, s)
---cbigStep (DoWhile c b,s) 
---    | bbigStep (b,s) == True = cbigStep (Seq c (DoWhile c b), s)
---    | otherwise = cbigStep (c,s) -- Executa 1x ao invés de Skip
-cbigStep (DoWhile c b, s)
-    | bbigStep (b, s) == True =
-        let combinedCmd = Seq c (DoWhile c b)
-        in cbigStep (combinedCmd, s)
-    | otherwise = (Skip, s)
+cbigStep (DoWhile c b, s) = 
+        let combinedC = (Seq c (While b c))
+        in cbigStep (combinedC, s)
 cbigStep (Loop e c, s)
    | ebigStep (e,s) <= 0 = (Skip, s)
    | otherwise = cbigStep(Seq c (Loop (Sub e (Num 1)) c), s)
-cbigStep (DAtrrib (Var x) (Var y) e1 e2, s) =
-    let n1 = ebigStep (e1, s)
-        n2 = ebigStep (e2, s)
-        s' = mudaVar (mudaVar s x n1) y n2
-    in (Skip, s')
+cbigStep (DAtrrib (Var x) (Var y) e1 e2, s) = 
+    cbigStep (Seq (Atrib (Var x) e1) (Atrib (Var y) e2), s)
 
 --------------------------------------
 --- Memórias para Teste
@@ -134,7 +126,7 @@ sigmaFib6 :: Memoria
 sigmaFib6 = [("x", 6), ("a", 0), ("b", 1), ("c", 0)]
 
 sigmaPotencia :: Memoria -- Potência >> z; Base >> x
-sigmaPotencia = [("w", 0), ("x", 3), ("y",3), ("z",2)]
+sigmaPotencia = [("w", 0), ("x", 3), ("y", 3), ("z", 1)]
 
 --------------------------------------
 --- Programas Teste
@@ -217,7 +209,7 @@ progDuplaAtrib1 = DAtrrib (Var "x") (Var "y") (Num 5) (Num 7)
 potencia :: C -- Com dupla atribuição (x = base, z = potencia)
 potencia = (Seq (Atrib (Var "w") (Var "x"))
            (DoWhile (DAtrrib (Var "w") (Var "y") (Mult (Var "w") (Var "x")) (Soma (Var "y") (Num 1)))
-                    (Leq (Var "y") (Soma (Var "z") (Num 1)))))
+                    (Leq (Var "y") (Var "z"))))
 
 {-- 
     int x, y, z, w;
@@ -237,15 +229,15 @@ potencia = (Seq (Atrib (Var "w") (Var "x"))
 progDoWhile1 :: C
 progDoWhile1 = DoWhile (Atrib (Var "x") (Soma (Var "x") (Num 1))) (Leq (Var "x") (Num 5))
 
-whileLoop1 :: C
-whileLoop1 = Seq
-    (Atrib (Var "x") (Num 1)) -- Inicializa x com 1
+doWhileLoop1 :: C
+doWhileLoop1 = Seq
+    (Atrib (Var "x") (Num 1))
     (DoWhile
         (Seq
-            (Atrib (Var "x") (Mult (Var "x") (Num 2))) -- x = x * 2
-            (Atrib (Var "x") (Soma (Var "x") (Num 1))) -- x = x + 1
+            (Atrib (Var "x") (Mult (Var "x") (Num 2)))
+            (Atrib (Var "x") (Soma (Var "x") (Num 1)))
         )
-        (Leq (Var "x") (Num 100)) -- Executa o loop enquanto x for menor ou igual a 100
+        (Leq (Var "x") (Num 100))
     )
 
 {--
