@@ -126,7 +126,7 @@ sigmaFib6 :: Memoria
 sigmaFib6 = [("x", 6), ("a", 0), ("b", 1), ("c", 0)]
 
 sigmaPotencia :: Memoria -- Potência >> z; Base >> x
-sigmaPotencia = [("w", 0), ("x", 3), ("y", 3), ("z", 1)]
+sigmaPotencia = [("w", 0), ("x", 2), ("y", 2), ("z", 3)]
 
 --------------------------------------
 --- Programas Teste
