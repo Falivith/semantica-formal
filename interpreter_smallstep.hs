@@ -82,18 +82,32 @@ mudaVar ((s,i):xs) v n
 ---------------------------------
 
 smallStepE :: (E, Memoria) -> (E, Memoria)
+
 smallStepE (Var x, s)                  = (Num (procuraVar s x), s)
+
+-----------------------------------------------------------------------
+
 smallStepE (Soma (Num n1) (Num n2), s) = (Num (n1 + n2), s)
 smallStepE (Soma (Num n) e, s)         = let (el,sl) = smallStepE (e,s)
                                          in (Soma (Num n) el, sl)
 smallStepE (Soma e1 e2,s)              = let (el,sl) = smallStepE (e1,s)
                                          in (Soma el e2,sl)
+
+-----------------------------------------------------------------------
+
 smallStepE (Mult (Num n1) (Num n2), s) = (Num (n1 * n2), s)
 smallStepE (Mult (Num n) e, s)         = let (el,sl) = smallStepE (e,s)
                                          in (Mult (Num n) el, sl)
 smallStepE (Mult e1 e2,s)              = let (el,sl) = smallStepE (e1,s)
-                                         in (Mult el e2,sl)
--- smallStepE (Sub e1 e2,s)              =
+                                         in (Mult el e2, sl)
+
+-----------------------------------------------------------------------
+
+smallStepE (Sub e1 e2,s)               = (Num (n1 - n2), s)
+smallStepE (Sub (Num n) e, s)          = let (el,sl) = smallStepE (e, s)
+                                         in (Sub (Num n) el, sl)
+smallstepE (Sub e1 e2, s)              = let (el,sl) = smallstepE (el, s)
+                                         in (Sub el e2, sl) 
 
 
 --smallStepB :: (B,Memoria) -> (B, Memoria)
