@@ -85,15 +85,11 @@ smallStepE :: (E, Memoria) -> (E, Memoria)
 
 smallStepE (Var x, s)                  = (Num (procuraVar s x), s)
 
------------------------------------------------------------------------
-
 smallStepE (Soma (Num n1) (Num n2), s) = (Num (n1 + n2), s)
 smallStepE (Soma (Num n) e, s)         = let (el,sl) = smallStepE (e,s)
                                          in (Soma (Num n) el, sl)
 smallStepE (Soma e1 e2,s)              = let (el,sl) = smallStepE (e1,s)
                                          in (Soma el e2,sl)
-
------------------------------------------------------------------------
 
 smallStepE (Mult (Num n1) (Num n2), s) = (Num (n1 * n2), s)
 smallStepE (Mult (Num n) e, s)         = let (el,sl) = smallStepE (e,s)
@@ -101,21 +97,46 @@ smallStepE (Mult (Num n) e, s)         = let (el,sl) = smallStepE (e,s)
 smallStepE (Mult e1 e2,s)              = let (el,sl) = smallStepE (e1,s)
                                          in (Mult el e2, sl)
 
------------------------------------------------------------------------
-
-smallStepE (Sub e1 e2,s)               = (Num (n1 - n2), s)
+smallStepE (Sub (Num n1) (Num n2), s)  = (Num (n1 - n2), s)
 smallStepE (Sub (Num n) e, s)          = let (el,sl) = smallStepE (e, s)
                                          in (Sub (Num n) el, sl)
 smallstepE (Sub e1 e2, s)              = let (el,sl) = smallstepE (el, s)
                                          in (Sub el e2, sl) 
 
+-----------------------------------------------------------------------
 
---smallStepB :: (B,Memoria) -> (B, Memoria)
--- smallStepB (Not b,s) 
---smallStepB (And b1 b2,s )  =
---smallStepB (Or b1 b2,s )  =
---smallStepB (Leq e1 e2, s) =
---smallStepB (Igual e1 e2, s) = -- recebe duas expressões aritméticas e devolve um valor booleano dizendo se são iguais
+
+smallStepB :: (B,Memoria) -> (B, Memoria)
+smallStepB (Not TRUE,s)                = (FALSE, s)  --not3
+smallStepB (Not FALSE, s)              = (TRUE, s)    --not2
+smallStepB (Not b, s)                  = let (b', s') = smallStepB (b,s) --not1
+                                          in (Not b', s')
+
+smallStepB (And FALSE b, s )           = (FALSE, s)
+smallStepB (And TRUE b, s )            = (b, s)
+smallStepB (And b1 b2, s )             = let (b1' , s) = smallStepB (b1, s)
+                                          in (And b1' b2 ,s)
+
+smallStepB (Or FALSE b, s)             = (b, s)
+smallStepB (Or TRUE b, s)              = (TRUE, s)
+smallStepB (Or b1 b2, s)               = let (b1', s) = smallStepB (b1, s)
+                                          in (Or b1' b2, s)
+
+smallStepB (Leq (Num n1) (Num n2), s)  =   if n1 <= n2
+                                             then (TRUE, s)
+                                             else (FALSE, s)
+smallStepB (Leq (Num n1) e, s)         = let (e', s') = smallStepE (e, s)
+                                          in (Leq (Num n1) e', s')
+smallStepB (Leq e1 e2, s)              = let (e1', s) = smallStepE (e1, s)
+                                          in (Leq e1' e2, s)
+                                 
+smallStepB (Igual (Num n1) (Num n2),s) =  if n1 == n2
+                                             then (TRUE, s)
+                                             else (FALSE, s)
+smallStepB (Igual (Num n1) e, s)         = let (e', s') = smallStepE (e, s)
+                                          in (Leq (Num n1) e', s')
+smallStepB (Igual e1 e2, s)              = let (e1', s) = smallStepE (e1, s)
+                                          in (Leq e1' e2, s)
 
 -- smallStepC :: (C,Memoria) -> (C,Memoria)
 -- smallStepC (If b c1 c2,s)  
@@ -151,8 +172,8 @@ isFinalB _       = False
 
 -- Descomentar quanto a função smallStepB estiver implementada:
 
---interpretadorB :: (B,Memoria) -> (B, Memoria)
---interpretadorB (b,s) = if (isFinalB b) then (b,s) else interpretadorB (smallStepB (b,s))
+interpretadorB :: (B,Memoria) -> (B, Memoria)
+interpretadorB (b,s) = if (isFinalB b) then (b,s) else interpretadorB (smallStepB (b,s))
 
 
 -- Interpretador da Linguagem Imperativa
