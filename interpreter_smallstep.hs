@@ -148,12 +148,18 @@ smallStepC (Seq Skip c2,s) = (c2, s)
 smallStepC (Seq c1 c2, s) = let (c1', s') = smallStepC(c1, s)
                              in (Seq c1' c2, s')
 
-smallStepC (Atrib (Var x) (Num n) ,s) = (Skip (mudaVar x n, s), s)
-smallStepC (Atrib (Var x) )
---smallStepC (While b c, s) 
---smallStepC (DoWhile c b,s) 
---smallStepC (Loop e c)  --- Recebe uma expressão "e" e um comando "c". Repete "e" vezes o comando "c"
---smallStepC (DAtrrib e1 e2 e3 e4)  -- Dupla atribuição: recebe duas variáveis "e1" e "e2" e duas expressões "e3" e "e4". Faz e1:=e3 e e2:=e4.
+smallStepC (Atrib (Var x) (Num n) ,s) = (Skip, mudaVar s x n)
+smallStepC (Atrib (Var x) e, s) = let (e', s') = smallStepE(e, s)
+                                   in (Atrib (Var x) e', s')
+
+smallStepC (While b c, s) = (If b (Seq c (While b c)) Skip, s)
+
+smallStepC (DoWhile c b,s) = (Seq c (While b c), s)
+
+smallStepC (Loop e c, s) = (If (Leq e (Num 0)) Skip (Seq c (Loop (Sub e (Num 1)) c)), s)
+
+smallStepC (DAtrrib (Var x) (Var y) e1 e2, s) = 
+    smallStepC (Seq (Atrib (Var x) e1) (Atrib (Var y) e2), s)
 
 
 ----------------------
@@ -162,6 +168,7 @@ smallStepC (Atrib (Var x) )
 
 
 --- Interpretador para Expressões Aritméticas:
+
 isFinalE :: E -> Bool
 isFinalE (Num n) = True
 isFinalE _       = False
@@ -206,42 +213,37 @@ interpretadorC (c,s) = if (isFinalC c) then (c,s) else interpretadorC (smallStep
 --- * Do While
 -------------------------------------
 
-exSigma2 :: Memoria
-exSigma2 = [("x",3), ("y",0), ("z",0)]
+--------------------------------------
+--- Memórias para Teste
+--------------------------------------
 
+sigma0 :: Memoria
+sigma0 = [("x",0), ("y",0), ("z",0)]
 
+sigma1 :: Memoria
+sigma1 = [("x", 1), ("y",0), ("z",0)]
+
+sigma2 :: Memoria
+sigma2 = [("x",10), ("y",0), ("z",0)]
+
+sigmaFib10 :: Memoria
+sigmaFib10 = [("x", 10), ("a", 0), ("b", 1), ("c", 0)]
+
+sigmaFib6 :: Memoria
+sigmaFib6 = [("x", 6), ("a", 0), ("b", 1), ("c", 0)]
+
+sigmaPotencia :: Memoria -- Potência >> z; Base >> x
+sigmaPotencia = [("w", 0), ("x", 2), ("y", 2), ("z", 3)]
+
+--------------------------------------
+--- Programas Teste
 ---
---- O progExp1 é um programa que usa apenas a semântica das expressões aritméticas. Esse
---- programa já é possível rodar com a implementação que fornecida:
+--- * Loop 
+--- * Dupla Atribuição
+--- * Do While
+-------------------------------------
 
-progExp1 :: E
-progExp1 = Soma (Num 3) (Soma (Var "x") (Var "y"))
-
----
---- para rodar:
--- A função smallStepE anda apenas um passo na avaliação da Expressão
-
--- *Main> smallStepE (progExp1, exSigma)
--- (Soma (Num 3) (Soma (Num 10) (Var "y")),[("x",10),("temp",0),("y",0)])
-
--- Note que no exemplo anterior, o (Var "x") foi substituido por (Num 10)
-
--- Para avaliar a expressão até o final, deve-se usar o interpretadorE:
-
--- *Main> interpretadorE (progExp1 , exSigma)
--- (Num 13,[("x",10),("temp",0),("y",0)])
-
--- *Main> interpretadorE (progExp1 , exSigma2)
--- (Num 6,[("x",3),("y",0),("z",0)])
-
-
---- Para rodar os próximos programas é necessário primeiro implementar as regras que faltam
---- e descomentar os respectivos interpretadores
-
-
----
 --- Exemplos de expressões booleanas:
-
 
 teste1 :: B
 teste1 = (Leq (Soma (Num 3) (Num 3))  (Mult (Num 2) (Num 3)))
@@ -249,8 +251,6 @@ teste1 = (Leq (Soma (Num 3) (Num 3))  (Mult (Num 2) (Num 3)))
 teste2 :: B
 teste2 = (Leq (Soma (Var "x") (Num 3))  (Mult (Num 2) (Num 3)))
 
-
----
 -- Exemplos de Programas Imperativos:
 
 testec1 :: C
@@ -262,3 +262,95 @@ fatorial = (Seq (Atrib (Var "y") (Num 1))
                 (While (Not (Igual (Var "x") (Num 1)))
                        (Seq (Atrib (Var "y") (Mult (Var "y") (Var "x")))
                             (Atrib (Var "x") (Sub (Var "x") (Num 1))))))
+
+progSeq1 :: C
+progSeq1 = Seq
+    (Atrib (Var "x") (Num 5)) -- X = 5
+    (Atrib (Var "y") (Soma (Var "x") (Num 3))) -- Y = X + 3
+
+progExp1 :: E
+progExp1 = Soma (Num 3) (Soma (Var "x") (Var "y"))
+
+--- Implementação com Loop:
+
+progLoop1 :: C
+progLoop1 = Loop (Num 3) (Atrib (Var "x") (Soma (Var "x") (Num 1)))
+
+{--
+    int x;
+    x = sigma; 
+
+    int n = 3; 
+
+    for (int i = 0; i < n; i++) {
+        x = x + 1;
+--}
+
+fibonacci :: C
+fibonacci = Loop (Var "x")
+    (Seq
+        (Atrib (Var "c") (Soma (Var "a") (Var "b"))) -- c = a + b
+        (Seq
+            (Atrib (Var "a") (Var "b")) -- a = b
+            (Atrib (Var "b") (Var "c")) -- b = c
+        )
+    )
+
+{--
+    int x = 10;
+    int a = 0;
+    int b = 1;
+
+    for (int i = 0; i < x; i++) {
+        int c = a + b;
+        a = b;
+        b = c;
+    }
+--}
+
+--- Implementação com Dupla atribuição (potência contêm do while também):
+
+progDuplaAtrib1 :: C
+progDuplaAtrib1 = DAtrrib (Var "x") (Var "y") (Num 5) (Num 7)
+
+potencia :: C -- Com dupla atribuição (x = base, z = potencia)
+potencia = (Seq (Atrib (Var "w") (Var "x"))
+           (DoWhile (DAtrrib (Var "w") (Var "y") (Mult (Var "w") (Var "x")) (Soma (Var "y") (Num 1)))
+                    (Leq (Var "y") (Var "z"))))
+
+{-- 
+    int x, y, z, w;
+    x = valorX (base)
+    y = 0;
+    z = valorZ (potencia)
+
+    w = x;
+    do {
+        w = w * x;
+        y = y + 1;
+    } while (y <= z); 
+--}
+
+--- Implementação com Do While:
+
+progDoWhile1 :: C
+progDoWhile1 = DoWhile (Atrib (Var "x") (Soma (Var "x") (Num 1))) (Leq (Var "x") (Num 5))
+
+doWhileLoop1 :: C
+doWhileLoop1 = Seq
+    (Atrib (Var "x") (Num 1))
+    (DoWhile
+        (Seq
+            (Atrib (Var "x") (Mult (Var "x") (Num 2)))
+            (Atrib (Var "x") (Soma (Var "x") (Num 1)))
+        )
+        (Leq (Var "x") (Num 100))
+    )
+
+{--
+    int x = 1; // Inicializa x com 1 pra qualquer sigma
+    do {
+        x = x * 2;
+        x = x + 1;
+    } while (x <= 100);
+--}
