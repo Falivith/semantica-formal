@@ -138,10 +138,18 @@ smallStepB (Igual (Num n1) e, s)         = let (e', s') = smallStepE (e, s)
 smallStepB (Igual e1 e2, s)              = let (e1', s) = smallStepE (e1, s)
                                           in (Leq e1' e2, s)
 
--- smallStepC :: (C,Memoria) -> (C,Memoria)
--- smallStepC (If b c1 c2,s)  
---smallStepC (Seq c1 c2,s)  
---smallStepC (Atrib (Var x) e,s) 
+smallStepC :: (C,Memoria) -> (C,Memoria)
+smallStepC (If FALSE c1 c2,s) = (c2, s)
+smallStepC (If TRUE c1 c2,s) = (c1, s)
+smallStepC (If b c1 c2, s) = let (b', s) = smallStepB(b, s)
+                              in (If b' c1 c2, s)
+
+smallStepC (Seq Skip c2,s) = (c2, s)
+smallStepC (Seq c1 c2, s) = let (c1', s') = smallStepC(c1, s)
+                             in (Seq c1' c2, s')
+
+smallStepC (Atrib (Var x) (Num n) ,s) = (Skip (mudaVar x n, s), s)
+smallStepC (Atrib (Var x) )
 --smallStepC (While b c, s) 
 --smallStepC (DoWhile c b,s) 
 --smallStepC (Loop e c)  --- Recebe uma expressão "e" e um comando "c". Repete "e" vezes o comando "c"
@@ -184,8 +192,8 @@ isFinalC _       = False
 
 -- Descomentar quando a função smallStepC estiver implementada:
 
---interpretadorC :: (C,Memoria) -> (C, Memoria)
---interpretadorC (c,s) = if (isFinalC c) then (c,s) else interpretadorC (smallStepC (c,s))
+interpretadorC :: (C,Memoria) -> (C, Memoria)
+interpretadorC (c,s) = if (isFinalC c) then (c,s) else interpretadorC (smallStepC (c,s))
 
 
 --------------------------------------
