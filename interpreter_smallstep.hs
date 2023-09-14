@@ -250,8 +250,8 @@ sigma2 = [("x",10), ("y",0), ("z",0)]
 sigmaFib10 :: Memoria
 sigmaFib10 = [("x", 10), ("a", 0), ("b", 1), ("c", 0)]
 
-sigmaFib6 :: Memoria
-sigmaFib6 = [("x", 6), ("a", 0), ("b", 1), ("c", 0)]
+sigmaFib6 :: Memoria -- 
+sigmaFib6 = [("x", 9), ("a", 0), ("b", 1), ("c", 0)]
 
 sigmaPotencia :: Memoria -- Potência >> z; Base >> x
 sigmaPotencia = [("w", 0), ("x", 2), ("y", 2), ("z", 4)]
@@ -269,14 +269,20 @@ sigmaPotencia = [("w", 0), ("x", 2), ("y", 2), ("z", 4)]
 teste1 :: B
 teste1 = (Leq (Soma (Num 3) (Num 3))  (Mult (Num 2) (Num 3)))
 
+-- Expected: True, porque 6 <= 6
+
 teste2 :: B
 teste2 = (Leq (Soma (Var "x") (Num 3))  (Mult (Num 2) (Num 3)))
+
+-- Expected: False, 13 <= 6 com Sigma2
 
 -- Exemplos de Programas Imperativos:
 
 testec1 :: C
 testec1 = (Seq (Seq (Atrib (Var "z") (Var "x")) (Atrib (Var "x") (Var "y"))) 
-               (Atrib (Var "y") (Var "z")))
+               (Seq (Atrib (Var "y") (Var "z")) (Atrib (Var "x") (Var "z"))))
+
+-- Expected: Propagação do valor em X em todas variáveis
 
 testec2 :: C
 testec2 = (Seq (Atrib (Var "z") (Var "x")) (Atrib (Var "y") (Var "z")))
