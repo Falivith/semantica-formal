@@ -98,13 +98,12 @@ smallStepE (Mult e1 e2,s)              = let (el,sl) = smallStepE (e1,s)
                                          in (Mult el e2, sl)
 
 smallStepE (Sub (Num n1) (Num n2), s)  = (Num (n1 - n2), s)
-smallStepE (Sub (Num n) e, s)          = let (el,sl) = smallStepE (e, s)
+smallStepE (Sub (Num n) e, s)          = let (el, sl) = smallStepE (e, s)
                                          in (Sub (Num n) el, sl)
-smallstepE (Sub e1 e2, s)              = let (el,sl) = smallstepE (el, s)
-                                         in (Sub el e2, sl) 
+smallStepE (Sub e1 e2, s)              = let (el, sl) = smallStepE (e1, s)
+                                         in (Sub el e2, sl)
 
 -----------------------------------------------------------------------
-
 
 smallStepB :: (B,Memoria) -> (B, Memoria)
 smallStepB (Not TRUE,s)                = (FALSE, s)  --not3
@@ -122,27 +121,49 @@ smallStepB (Or TRUE b, s)              = (TRUE, s)
 smallStepB (Or b1 b2, s)               = let (b1', s) = smallStepB (b1, s)
                                           in (Or b1' b2, s)
 
-smallStepB (Leq (Num n1) (Num n2), s)  =   if n1 <= n2
-                                             then (TRUE, s)
-                                             else (FALSE, s)
+--smallStepB (Leq (Num n1) (Num n2), s)  = if n1 <= n2
+--                                           then (TRUE, s)
+--                                           else (FALSE, s)
+--smallStepB (Leq (Num n1) e, s)         = let (e', s') = smallStepE (e, s)
+--                                        in (Leq (Num n1) e', s')
+--smallStepB (Leq e1 e2, s)              = let (e1', s') = smallStepE (e1, s)
+--                                        in (Leq e1' e2, s')
+
+smallStepB (Leq (Num n1) (Num n2), s)  = if n1 <= n2
+                                           then (TRUE, s)
+                                           else (FALSE, s)
 smallStepB (Leq (Num n1) e, s)         = let (e', s') = smallStepE (e, s)
-                                          in (Leq (Num n1) e', s')
-smallStepB (Leq e1 e2, s)              = let (e1', s) = smallStepE (e1, s)
-                                          in (Leq e1' e2, s)
+                                        in (Leq (Num n1) e', s')
+smallStepB (Leq e1 e2, s)              = let (e1', s') = smallStepE (e1, s)
+                                        in (Leq e1' e2, s')
                                  
-smallStepB (Igual (Num n1) (Num n2),s) =  if n1 == n2
-                                             then (TRUE, s)
-                                             else (FALSE, s)
-smallStepB (Igual (Num n1) e, s)         = let (e', s') = smallStepE (e, s)
-                                          in (Leq (Num n1) e', s')
-smallStepB (Igual e1 e2, s)              = let (e1', s) = smallStepE (e1, s)
-                                          in (Leq e1' e2, s)
+--smallStepB (Igual (Num n1) (Num n2),s) =  if n1 == n2
+--                                            then (TRUE, s)
+--                                             else (FALSE, s)
+--smallStepB (Igual (Num n1) e, s)         = let (e', s') = smallStepE (e, s)
+--                                          in (Leq (Num n1) e', s')
+--smallStepB (Igual e1 e2, s)              = let (e1', s) = smallStepE (e1, s)
+--                                          in (Leq e1' e2, s)
+
+smallStepB (Igual (Num n1) (Num n2),s) = if n1 == n2
+                                           then (TRUE, s)
+                                           else (FALSE, s)
+smallStepB (Igual (Num n1) e, s)       = let (e', s') = smallStepE (e, s)
+                                        in (Igual (Num n1) e', s')
+smallStepB (Igual e1 e2, s)            = let (e1', s') = smallStepE (e1, s)
+                                        in (Igual e1' e2, s')
+
+--smallStepC :: (C,Memoria) -> (C,Memoria)
+--smallStepC (If FALSE c1 c2,s) = (c2, s)
+--smallStepC (If TRUE c1 c2,s) = (c1, s)
+--smallStepC (If b c1 c2, s) = let (b', s) = smallStepB(b, s)
+--                              in (If b' c1 c2, s)
 
 smallStepC :: (C,Memoria) -> (C,Memoria)
 smallStepC (If FALSE c1 c2,s) = (c2, s)
 smallStepC (If TRUE c1 c2,s) = (c1, s)
-smallStepC (If b c1 c2, s) = let (b', s) = smallStepB(b, s)
-                              in (If b' c1 c2, s)
+smallStepC (If b c1 c2, s) = let (b', s') = smallStepB(b, s)
+                              in (If b' c1 c2, s')
 
 smallStepC (Seq Skip c2,s) = (c2, s)
 smallStepC (Seq c1 c2, s) = let (c1', s') = smallStepC(c1, s)
@@ -152,9 +173,9 @@ smallStepC (Atrib (Var x) (Num n) ,s) = (Skip, mudaVar s x n)
 smallStepC (Atrib (Var x) e, s) = let (e', s') = smallStepE(e, s)
                                    in (Atrib (Var x) e', s')
 
-smallStepC (While b c, s) = (If b (Seq c (While b c)) Skip, s)
+smallStepC (While b c, s) = (If b (Seq c (While b c)) (Skip), s)
 
-smallStepC (DoWhile c b,s) = (Seq c (While b c), s)
+smallStepC (DoWhile c b,s) = (Seq c (If b (DoWhile c b) (Skip)),s) 
 
 smallStepC (Loop e c, s) = (If (Leq e (Num 0)) Skip (Seq c (Loop (Sub e (Num 1)) c)), s)
 
@@ -233,7 +254,7 @@ sigmaFib6 :: Memoria
 sigmaFib6 = [("x", 6), ("a", 0), ("b", 1), ("c", 0)]
 
 sigmaPotencia :: Memoria -- Potência >> z; Base >> x
-sigmaPotencia = [("w", 0), ("x", 2), ("y", 2), ("z", 3)]
+sigmaPotencia = [("w", 0), ("x", 2), ("y", 2), ("z", 4)]
 
 --------------------------------------
 --- Programas Teste
@@ -257,11 +278,26 @@ testec1 :: C
 testec1 = (Seq (Seq (Atrib (Var "z") (Var "x")) (Atrib (Var "x") (Var "y"))) 
                (Atrib (Var "y") (Var "z")))
 
+testec2 :: C
+testec2 = (Seq (Atrib (Var "z") (Var "x")) (Atrib (Var "y") (Var "z")))
+
 fatorial :: C
 fatorial = (Seq (Atrib (Var "y") (Num 1))
-                (While (Not (Igual (Var "x") (Num 1)))
+                (While (Not (Igual (Var "x") (Num 0)))
                        (Seq (Atrib (Var "y") (Mult (Var "y") (Var "x")))
                             (Atrib (Var "x") (Sub (Var "x") (Num 1))))))
+
+whileTest :: C
+whileTest = 
+    (Seq (Atrib (Var "y") (Num 10)) 
+        (While
+        (Igual (Num 6) (Num 5))
+          (Atrib (Var "y") (Soma (Var "y") (Var "x")))
+      ))
+
+ifTest :: C
+ifTest = (If TRUE (Seq (Atrib (Var "y") (Num 10)) (Skip)) Skip)
+    
 
 progSeq1 :: C
 progSeq1 = Seq
@@ -318,7 +354,7 @@ potencia = (Seq (Atrib (Var "w") (Var "x"))
            (DoWhile (DAtrrib (Var "w") (Var "y") (Mult (Var "w") (Var "x")) (Soma (Var "y") (Num 1)))
                     (Leq (Var "y") (Var "z"))))
 
-{-- 
+{--
     int x, y, z, w;
     x = valorX (base)
     y = 0;
@@ -328,7 +364,7 @@ potencia = (Seq (Atrib (Var "w") (Var "x"))
     do {
         w = w * x;
         y = y + 1;
-    } while (y <= z); 
+    } while (y <= z);
 --}
 
 --- Implementação com Do While:
